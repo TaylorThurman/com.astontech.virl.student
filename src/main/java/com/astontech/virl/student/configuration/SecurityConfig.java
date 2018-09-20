@@ -2,11 +2,14 @@ package com.astontech.virl.student.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 
 @EnableWebSecurity
@@ -39,8 +42,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         if (authenticationMethod.equals("IN_MEMORY")) {
 
             auth.inMemoryAuthentication()
-                    .withUser("test_admin").password("123").roles("MENTOR")
-                    .and().withUser("test_mentee").password("123").roles("MENTEE");
+                    .withUser("mentor").password("{noop}123").roles("MENTOR")
+                    .and().withUser("mentee").password("{noop}123").roles("MENTEE");
 
         } else if (authenticationMethod.equals("LDAP")) {
 
@@ -73,11 +76,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     .authorizeRequests()
                     .antMatchers("/").permitAll();
 
-        } else if (authenticationMethod.equals("IN_MEMORY")) {
-
-            //todo: will implement later...
-
-        } else if (authenticationMethod.equals("LDAP")) {
+        } else if ( authenticationMethod.equals("IN_MEMORY") ||
+                    authenticationMethod.equals("LDAP") ) {
 
             http
                     .authorizeRequests()

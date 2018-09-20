@@ -1,6 +1,5 @@
 package com.astontech.virl.student.controllers;
 
-
 import com.astontech.virl.student.domain.UserProfile;
 import com.astontech.virl.student.services.UserProfileService;
 import org.slf4j.Logger;
@@ -9,8 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
+
+import static com.astontech.virl.student.configuration.CustomSuccessHandler.removeEmailSignature;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -24,18 +26,25 @@ public class UserProfileController {
         this.userProfileService = userProfileService;
     }
 
+    @GetMapping("/")
+    public ResponseEntity<UserProfile> getSessionProfile(HttpSession session) {
+        if(session.getAttribute("username") != null) {
+            String username = removeEmailSignature(session.getAttribute("username").toString());
+            if (username == null) {
+                logger.info("Error Getting Username From Session");
+                return ResponseEntity.status(403).body(null);
+            } else {
+                return profileSearch(username);
+            }
+        } else {
+            logger.info("Error No Session!");
+            return ResponseEntity.status(420).body(null);
+        }
+    }
+
     @GetMapping("/{username}")
     public ResponseEntity<UserProfile> getAllProfiles(@PathVariable String username) {
-
-        Optional<UserProfile> searchedProfile = userProfileService.findByUsername(username);
-        if (!searchedProfile.isPresent()) {
-            logger.info("USER PROFILE NOT FOUND " + username);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-
-        return ResponseEntity.ok()
-                .body(searchedProfile.get());
-
+        return profileSearch(username);
     }
 
     @PostMapping("/")
@@ -45,5 +54,16 @@ public class UserProfileController {
             ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(userProfile);
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(userProfile);
+    }
+
+    public ResponseEntity<UserProfile> profileSearch(String username) {
+        Optional<UserProfile> searchedProfile = userProfileService.findByUsername(username);
+        if (!searchedProfile.isPresent()) {
+            logger.info("USER PROFILE NOT FOUND " + username);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        return ResponseEntity.ok()
+                .body(searchedProfile.get());
     }
 }
